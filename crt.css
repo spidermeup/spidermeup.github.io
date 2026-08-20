@@ -128,45 +128,185 @@
       text-shadow: 2.6208764473832513px 0 1px rgba(0,30,255,0.5), -2.6208764473832513px 0 1px rgba(255,0,80,0.3), 0 0 3px;
     }
   }
-  .crt::after {
-    content: " ";
-    display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    background: rgba(18, 16, 16, 0.1);
-    opacity: 0;
-    z-index: 2;
-    pointer-events: none;
-    animation: flicker 0.15s infinite;
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: black;
+    color: lime;
+    font-family: monospace;
+    height: 100%;
   }
-  .crt::before {
-    content: " ";
-    display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-    z-index: 2;
-    background-size: 100% 2px, 3px 100%;
-    pointer-events: none;
-  }
+
   .crt {
-    animation: textShadow 1.67s infinite;
+    animation: textShadow 1.67s infinite; /* Text shadow animation */
     background-color: black;
     color: lime;
     height: 100vh;
-    width: 100vw;
+    width: 100%;
     padding: 2em;
-    font-size: 3.5vw;
+    font-size: clamp(14px, 2vw, 22px);
     font-family: monospace;
     box-sizing: border-box;
   }
+
+  .crt::before,
+  .crt::after {
+    content: "";
+    display: block;
+    /* fixed, not absolute: .crt is unpositioned, so absolute would anchor these
+       to the document origin and leave anything past the first screenful bare. */
+    position: fixed;
+    top: 0; left: 0; bottom: 0; right: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
   
-  body {
-  margin: 0;
+  .crt::before {
+    background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%),
+                linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06));
+    background-size: 100% 2px, 3px 100%;
+  }
+  
+  .crt::after {
+    background: rgba(18, 16, 16, 0.1);
+    animation: flicker 0.15s infinite;
+  }
+  
+  #terminal {
+    position: relative;
+    /* Below the .crt overlays (z-index 1) so the scanlines actually fall over
+       the text. Above z-index 2 they only ever darkened the black background,
+       which is to say they did nothing. */
+    z-index: 0;
+    flex-grow: 1;
+    white-space: pre-wrap;
+    padding-bottom: 5em;
+    max-width: 80ch;
+  }
+
+  #terminal .bullet {
+    display: block;
+    padding-left: 2ch;
+    text-indent: -2ch;
+  }
+
+  #terminal a,
+  #terminal a:visited {
+    color: lime;
+    text-decoration: underline;
+  }
+
+  #terminal a:hover,
+  #terminal a:focus {
+    color: #ccffcc;
+    background: rgba(0, 255, 0, 0.15);
+    outline: none;
+  }
+
+  #terminal .dir {
+    font-weight: bold;
+  }
+
+
+  .crt-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2em;
+    padding: 1em 0 1.5em;
+    z-index: 3;
+    background: linear-gradient(to top,
+      rgba(0, 0, 0, 0.85) 30%,
+      rgba(0, 0, 0, 0));
+    pointer-events: none;
+  }
+
+  .crt-footer a {
+    pointer-events: auto;
+    color: lime;
+    display: inline-flex;
+    opacity: 0.75;
+    transition: opacity 0.15s ease, transform 0.15s ease, filter 0.15s ease;
+    text-decoration: none;
+  }
+
+  .crt-footer a:hover,
+  .crt-footer a:focus-visible {
+    opacity: 1;
+    transform: translateY(-2px);
+    outline: none;
+  }
+
+  .crt-footer svg {
+    width: 28px;
+    height: 28px;
+    fill: currentColor;
+    filter: drop-shadow(0 0 4px rgba(0, 255, 0, 0.55));
+  }
+
+  .crt-footer a:hover svg,
+  .crt-footer a:focus-visible svg {
+    filter: drop-shadow(0 0 8px rgba(0, 255, 0, 0.9));
+  }
+  
+  /* Ordinary inline flow, not flex, so the prompt, the typed text and the
+     cursor wrap onto the next line together like text in a real terminal. */
+  .line {
+    position: relative;
+    overflow-wrap: anywhere;
+  }
+
+  /* The line you are typing wraps at the column, like a terminal.
+     overflow-wrap only breaks a word as a last resort: it first pushes the
+     whole over-long token onto the next line, which left the prompt sitting
+     alone on the line above. break-all breaks at the edge instead. */
+  .prompt-line {
+    word-break: break-all;
+  }
+
+  .prompt {
+    margin-right: 0.5em;
+  }
+
+  /* The real <input> holds the value and the caret so the browser still does
+     editing, key repeat, IME and the mobile keyboard. It is invisible; what
+     you see is .entry, rendered from its value on every change. */
+  .hidden-input {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 1px;
+    height: 1em;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    opacity: 0;
+    font: inherit;
+  }
+
+  /* A block cursor sitting on the character it is over, colours inverted. */
+  .cursor {
+    background: lime;
+    color: black;
+    animation: blockBlink 1.06s infinite;
+  }
+
+  @keyframes blockBlink {
+    0%, 49%   { background: lime;        color: black; }
+    50%, 100% { background: transparent; color: lime;  }
+  }
+
+  /* The flicker and text-shadow jitter run continuously; give anyone who has
+     asked for less motion a still screen. The cursor stays solid rather than
+     blinking, so it is still visible as a cursor. */
+  @media (prefers-reduced-motion: reduce) {
+    .crt,
+    .crt::after,
+    .cursor {
+      animation: none;
+    }
   }
