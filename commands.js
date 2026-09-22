@@ -76,17 +76,86 @@ function resolvePath(path) {
 
 const COMMANDS = ['ls', 'cd', 'pwd', 'cat', 'clear', 'whoami', 'date', 'help'];
 
-function renderListing(node) {
-    const names = Object.keys(node.children).sort();
-    return names.map(n => {
-        const child = node.children[n];
-        return child.type === 'dir'
-            ? `<span class="dir">${n}</span>`
-            : n;
-    }).join('   ');
+// The multi-target `ls` heading echoes the path the user typed into a line
+// rendered as HTML, so it has to be escaped: `ls ~ <style>body{display:none}/..`
+// resolves to a real directory (the `..` pops the payload back off) and would
+// otherwise inject live markup.
+function escapeHtml(text) {
+    return text.replace(/[&<>"']/g, ch => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[ch]));
 }
 
+function pathString(parts) {
+    return parts.length === 0 ? '~' : '~/' + parts.join('/');
+}
+
+// Size in characters of what `cat` would actually print, so the number in a
+// long listing is real rather than decorative. Directories report their entry
+// count; there are no blocks on disk to report instead.
+function entrySize(node) {
+    if (node.type === 'dir') return Object.keys(node.children).length;
+    const content = typeof node.content === 'function' ? node.content() : node.content;
+    return node.html ? content.replace(/<[^>]*>/g, '').length : content.length;
+}
+
+// Every entry carries the command it runs when clicked, so the filesystem can
+// be navigated by tapping — on a phone reached from an NFC card, typing
+// `cd resume` on a touch keyboard is the main thing standing in the way.
+// Paths are absolute so a listing stays correct after the cwd moves on.
+function entryHtml(name, node, target) {
+    const cmd = node.type === 'dir'
+        ? `cd ${target} && ls -la`
+        : `cat ${target}`;
+    const cls = node.type === 'dir' ? 'tap dir' : 'tap';
+    return `<span class="${cls}" data-cmd="${escapeHtml(cmd)}">${escapeHtml(name)}</span>`;
+}
+
+function renderListing(node, parts, opts = {}) {
+    const entries = Object.keys(node.children).sort().map(name => ({
+        name,
+        node: node.children[name],
+        target: pathString([...parts, name])
+    }));
+
+    if (opts.all) {
+        // `.` and `..` are directories for listing purposes; the node stands in
+        // for the real one, which is only needed for its type and size here.
+        entries.unshift(
+            { name: '.',  node: node, target: pathString(parts) },
+            { name: '..', node: getNode(parts.slice(0, -1)) || node,
+              target: pathString(parts.slice(0, -1)) }
+        );
+    }
+
+    if (!opts.long) {
+        return entries.map(e => entryHtml(e.name, e.node, e.target)).join('   ');
+    }
+
+    // One entry per line: type, size, name. Full-width rows are far easier to
+    // hit than names packed three-to-a-row.
+    return entries.map(e => {
+        const type = e.node.type === 'dir' ? 'd' : '-';
+        const size = String(entrySize(e.node)).padStart(6);
+        return `${type}  ${size}  ${entryHtml(e.name, e.node, e.target)}`;
+    }).join('\n');
+}
+
+// Commands can be chained with `&&`, which is what lets clicking a directory
+// run `cd <dir> && ls -la` — it moves the prompt and shows you what is there,
+// and the echoed line is something you could have typed yourself.
 async function handleCommand(line) {
+    for (const part of line.split('&&')) {
+        await runSingleCommand(part);
+    }
+    appendLine(getPromptText(), true);
+}
+
+async function runSingleCommand(line) {
     const tokens = line.trim().split(/\s+/);
     const command = (tokens[0] || '').toLowerCase();
     const args = tokens.slice(1).filter(a => a.length > 0);
@@ -98,7 +167,7 @@ async function handleCommand(line) {
         case 'help':
             appendLine(
                 'Available commands:\n' +
-                '  ls [path]    list directory contents\n' +
+                '  ls [-la]     list directory contents (-l long, -a all)\n' +
                 '  cd [path]    change directory\n' +
                 '  pwd          print working directory\n' +
                 '  cat <file>   print file contents\n' +
@@ -106,7 +175,8 @@ async function handleCommand(line) {
                 '  date         current date/time\n' +
                 '  clear        clear the screen\n' +
                 '  help         this list\n\n' +
-                'Try: ls  ->  cd resume  ->  cat experience'
+                'Try: ls  ->  cd resume  ->  cat experience\n' +
+                'Names in a listing can also be clicked.'
             );
             break;
 
@@ -127,7 +197,20 @@ async function handleCommand(line) {
             break;
 
         case 'ls': {
-            const targets = args.length ? args : [null];
+            // A lone '-' is a path, not a flag, same as a real shell.
+            const isFlag = a => a.startsWith('-') && a.length > 1;
+            const flagChars = new Set(
+                args.filter(isFlag).join('').split('').filter(c => c !== '-')
+            );
+            const unknown = [...flagChars].find(c => !'la'.includes(c));
+            if (unknown) {
+                appendLine(`ls: invalid option -- '${unknown}'\nTry 'help' for more information.`);
+                break;
+            }
+            const opts = { long: flagChars.has('l'), all: flagChars.has('a') };
+
+            const paths = args.filter(a => !isFlag(a));
+            const targets = paths.length ? paths : [null];
             for (const target of targets) {
                 const parts = target ? resolvePath(target) : cwdParts;
                 const node = getNode(parts);
@@ -139,8 +222,8 @@ async function handleCommand(line) {
                     appendLine(target);
                     continue;
                 }
-                const heading = targets.length > 1 && target ? `${target}:\n` : '';
-                appendLine(heading + renderListing(node), false, true);
+                const heading = targets.length > 1 && target ? `${escapeHtml(target)}:\n` : '';
+                appendLine(heading + renderListing(node, parts, opts), false, true);
             }
             break;
         }
@@ -192,6 +275,4 @@ async function handleCommand(line) {
         default:
             appendLine(`bash: ${command}: command not found`);
     }
-
-    appendLine(getPromptText(), true);
 }

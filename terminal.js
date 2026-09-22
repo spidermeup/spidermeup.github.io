@@ -1,5 +1,3 @@
-console.log("loaded");
-
 const terminal = document.getElementById('terminal');
 
 const history = [];
@@ -209,10 +207,31 @@ function appendLine(content = '', withInput = false, isHtml = false) {
   window.scrollTo(0, document.body.scrollHeight);
 }
 
+// Type a command into the active prompt and submit it, exactly as if it had
+// been typed. Clicking therefore leaves the same scrollback as the keyboard,
+// and there is only one code path to reason about.
+function runCommand(cmd) {
+  const input = terminal.querySelector('input.hidden-input');
+  if (!input) return;
+  input.value = cmd;
+  input.selectionStart = input.selectionEnd = cmd.length;
+  input.renderLine();
+  input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+}
+
 // Click anywhere in the terminal area to refocus the active input.
 // Footer links keep their own click behavior.
 document.addEventListener('click', (e) => {
   if (e.target.closest('a')) return;
+
+  // Entries in a listing run their command when clicked. Skipped while text is
+  // selected, so dragging across a name copies it instead of navigating.
+  const tap = e.target.closest('.tap');
+  if (tap && window.getSelection()?.isCollapsed !== false) {
+    runCommand(tap.dataset.cmd);
+    return;
+  }
+
   // Only the active line still has an input; finished lines dropped theirs.
   const input = terminal.querySelector('input.hidden-input');
   if (input) input.focus();
