@@ -133,7 +133,12 @@
     padding: 0;
     background: black;
     color: lime;
-    font-family: monospace;
+    /* Generic `monospace` resolves to Courier on iOS, which lacks the
+       box-drawing glyphs the diagrams use. Those then fall back to a font
+       with a different advance width and the row stops lining up. Name
+       fonts that actually carry U+2500 first. */
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco,
+                 "DejaVu Sans Mono", "Liberation Mono", Consolas, monospace;
     height: 100%;
   }
 
@@ -145,8 +150,17 @@
     width: 100%;
     padding: 2em;
     font-size: clamp(14px, 2vw, 22px);
-    font-family: monospace;
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco,
+                 "DejaVu Sans Mono", "Liberation Mono", Consolas, monospace;
     box-sizing: border-box;
+  }
+
+  /* On a phone, 2em of padding each side costs about four columns, which is the
+     difference between a diagram fitting and wrapping. */
+  @media (max-width: 600px) {
+    .crt {
+      padding: 1em 0.75em;
+    }
   }
 
   .crt::before,
