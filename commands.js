@@ -90,6 +90,36 @@ function escapeHtml(text) {
     }[ch]));
 }
 
+// A clickable command. What is shown is exactly what runs, so the `Try:` line
+// works as a tutorial when clicked left to right, just as if it were typed.
+function tapCmd(cmd) {
+    return `<span class="tap" data-cmd="${escapeHtml(cmd)}">${escapeHtml(cmd)}</span>`;
+}
+
+// [name, operand, description]. Only the name is clickable — the operand is a
+// placeholder, not something to run. `cd` with no argument goes home and `cat`
+// with none reports a missing operand, which is what a real shell does.
+const HELP_ROWS = [
+    ['ls',     '[-la]',  'list directory contents (-l long, -a all)'],
+    ['cd',     '[path]', 'change directory'],
+    ['pwd',    '',       'print working directory'],
+    ['cat',    '<file>', 'print file contents'],
+    ['whoami', '',       'your system info'],
+    ['date',   '',       'current date/time'],
+    ['clear',  '',       'clear the screen'],
+    ['help',   '',       'this list'],
+];
+
+const HELP_COL = 13;
+
+function renderHelpRow([name, operand, description]) {
+    const usage = operand ? `${name} ${operand}` : name;
+    const shown = operand ? `${tapCmd(name)} ${escapeHtml(operand)}` : tapCmd(name);
+    // Pad on the visible length, not the markup length, so the descriptions
+    // still line up once the tap spans are in place.
+    return '  ' + shown + ' '.repeat(Math.max(1, HELP_COL - usage.length)) + description;
+}
+
 function pathString(parts) {
     return parts.length === 0 ? '~' : '~/' + parts.join('/');
 }
@@ -167,16 +197,11 @@ async function runSingleCommand(line) {
         case 'help':
             appendLine(
                 'Available commands:\n' +
-                '  ls [-la]     list directory contents (-l long, -a all)\n' +
-                '  cd [path]    change directory\n' +
-                '  pwd          print working directory\n' +
-                '  cat <file>   print file contents\n' +
-                '  whoami       your system info\n' +
-                '  date         current date/time\n' +
-                '  clear        clear the screen\n' +
-                '  help         this list\n\n' +
-                'Try: ls  ->  cd resume  ->  cat experience\n' +
-                'Names in a listing can also be clicked.'
+                HELP_ROWS.map(renderHelpRow).join('\n') + '\n\n' +
+                'Try: ' + tapCmd('ls') + '  ->  ' + tapCmd('cd resume') +
+                '  ->  ' + tapCmd('cat experience') + '\n' +
+                'Names in a listing can also be clicked.',
+                false, true
             );
             break;
 

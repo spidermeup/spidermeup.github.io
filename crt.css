@@ -207,6 +207,17 @@
     font-weight: bold;
   }
 
+  /* Listing entries run a command when clicked. Same highlight as the links, so
+     it reads as interactive rather than as a surprise. */
+  #terminal .tap {
+    cursor: pointer;
+  }
+
+  #terminal .tap:hover {
+    color: #ccffcc;
+    background: rgba(0, 255, 0, 0.15);
+  }
+
 
   .crt-footer {
     position: fixed;

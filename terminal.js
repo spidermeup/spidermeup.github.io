@@ -237,5 +237,17 @@ document.addEventListener('click', (e) => {
   if (input) input.focus();
 });
 
-appendLine('Hi, I’m Ilias! A hardware engineer with a love for solving tough problems and making systems faster and more efficient. Right now, I’m at NVIDIA, focusing on CPU design efforts for high-performance computing. Before that, I spent years at Arm working on everything from branch prediction and memory translation to speculative execution and heterogeneous systems. I’ve got a PhD in computer science, a few cool patents, and a real passion for pushing the boundaries of what hardware can do.\n\nType `help` for commands, or run `ls` to start exploring.');
+// Backticked commands become clickable. Without this the very first step needs
+// the keyboard, which strands anyone who arrived by tapping an NFC card: the
+// listings are clickable, but nothing gets you to the first listing.
+function withTappableCommands(text) {
+  return escapeHtml(text).replace(
+    /`([^`]+)`/g,
+    // Backticks stay visible: they are the cue that this is a command, and on a
+    // touch screen there is no hover state to reveal anything.
+    (_, cmd) => `\`<span class="tap" data-cmd="${cmd}">${cmd}</span>\``
+  );
+}
+
+appendLine(withTappableCommands('Hi, I’m Ilias! A hardware engineer with a love for solving tough problems and making systems faster and more efficient. Right now, I’m at NVIDIA, focusing on CPU design efforts for high-performance computing. Before that, I spent years at Arm working on everything from branch prediction and memory translation to speculative execution and heterogeneous systems. I’ve got a PhD in computer science, a few cool patents, and a real passion for pushing the boundaries of what hardware can do.\n\nType `help` for commands, or run `ls` to start exploring.'), false, true);
 appendLine(getPromptText(), true);
