@@ -1,3 +1,18 @@
+/* JetBrains Mono, subset to the ~110 characters this site uses (4.8 KB).
+   Embedded because the diagrams are drawn with box-drawing characters, and
+   the system monospace on Android (Roboto Mono) and iOS (Courier) does not
+   have them: those glyphs came from a fallback font at a different advance
+   width, so borders stopped lining up with the sides they belong to.
+   Inlined rather than linked so it costs no extra request.
+   SIL Open Font License 1.1 - https://github.com/JetBrains/JetBrainsMono */
+@font-face {
+  font-family: 'TerminalMono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url(data:font/woff2;base64,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) format('woff2');
+}
+
 @keyframes flicker {
     0% {
       opacity: 0.27861;
@@ -133,12 +148,7 @@
     padding: 0;
     background: black;
     color: lime;
-    /* Generic `monospace` resolves to Courier on iOS, which lacks the
-       box-drawing glyphs the diagrams use. Those then fall back to a font
-       with a different advance width and the row stops lining up. Name
-       fonts that actually carry U+2500 first. */
-    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco,
-                 "DejaVu Sans Mono", "Liberation Mono", Consolas, monospace;
+    font-family: monospace;
     height: 100%;
   }
 
@@ -150,17 +160,8 @@
     width: 100%;
     padding: 2em;
     font-size: clamp(14px, 2vw, 22px);
-    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco,
-                 "DejaVu Sans Mono", "Liberation Mono", Consolas, monospace;
+    font-family: monospace;
     box-sizing: border-box;
-  }
-
-  /* On a phone, 2em of padding each side costs about four columns, which is the
-     difference between a diagram fitting and wrapping. */
-  @media (max-width: 600px) {
-    .crt {
-      padding: 1em 0.75em;
-    }
   }
 
   .crt::before,
@@ -215,6 +216,13 @@
     color: #ccffcc;
     background: rgba(0, 255, 0, 0.15);
     outline: none;
+  }
+
+  /* Only the diagrams use the embedded face. They are the part that depends on
+     box-drawing characters sharing one advance width; the prose is happier in
+     whatever monospace the device considers native. */
+  #terminal .art {
+    font-family: 'TerminalMono', ui-monospace, Menlo, "Noto Sans Mono", monospace;
   }
 
   #terminal .dir {

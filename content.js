@@ -16,6 +16,13 @@ const PAPERS = {
     sdm:       'https://arxiv.org/abs/2110.09166',
 };
 
+// Diagrams are wrapped so the embedded monospace face can be scoped to them.
+// They are the only part that depends on box-drawing characters sitting on the
+// same grid as everything else; the prose uses the system monospace.
+function art(...rows) {
+    return `<span class="art">${rows.join('\n')}</span>`;
+}
+
 function link(href, label) {
     return `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
 }
@@ -36,18 +43,20 @@ function sdmDiagram() {
     // about twice as tall as it is wide.
     // Double-quoted: the rows contain apostrophes.
     return [
-        "            ,",
-        "      ,          ..·····..       ,",
-        "               ·'         '·",
-        "             ·'    o        '·        ,",
-        "    ,       ·          o      ·",
-        "           ·     o             ·",
-        "           ·         X         ·",
-        "           ·             o     ·     ,",
-        "     ,      ·      o          ·",
-        "             ·.        o    .·",
-        "               ·.         .·       ,",
-        "      ,          ''·····''",
+        art(
+            "                ,",
+            "          ,          ..·····..       ,",
+            "                   ·'         '·",
+            "                 ·'    o        '·        ,",
+            "        ,       ·          o      ·",
+            "               ·     o             ·",
+            "               ·         X         ·",
+            "               ·             o     ·     ,",
+            "         ,      ·      o          ·",
+            "                 ·.        o    .·",
+            "                   ·.         .·       ,",
+            "          ,          ''·····''",
+        ),
         "             ,                ,"
     ].join('\n');
 }
@@ -146,15 +155,19 @@ const fs = {
                     link(PAPERS.everyWalk, 'Every Walk\'s a Hit: Making Page Walks Single-Access Cache Hits'),
                     'ASPLOS 2022',
                     '',
-                    '   ┌────┐    ┌────┐    ┌────┐    ┌────┐',
-                    '   │ L1 │ ─→ │ L2 │ ─→ │ L3 │ ─→ │ L4 │',
-                    '   └────┘    └────┘    └────┘    └────┘',
-                    '   (4 cache accesses)',
+                    art(
+                        '       ┌────┐    ┌────┐    ┌────┐    ┌────┐',
+                        '       │ L1 │ ─→ │ L2 │ ─→ │ L3 │ ─→ │ L4 │',
+                        '       └────┘    └────┘    └────┘    └────┘',
+                        '       (4 cache accesses)',
+                    ),
                     '',
-                    '   ┌────┐    ┌──────────┐    ┌────┐',
-                    '   │ L1 │ ─→ │  L2 + L3 │ ─→ │ L4 │',
-                    '   └────┘    └──────────┘    └────┘',
-                    '   (3 cache accesses)',
+                    art(
+                        '       ┌────┐    ┌──────────┐    ┌────┐',
+                        '       │ L1 │ ─→ │  L2 + L3 │ ─→ │ L4 │',
+                        '       └────┘    └──────────┘    └────┘',
+                        '       (3 cache accesses)',
+                    ),
                     '',
                     "A page walk normally costs one cache access per level of the page table. This paper merges adjacent levels: an upper-level table and all the lower-level tables it points to are stored together in one larger block, indexed by the bits of both. The merged table holds the same content as the two it replaces, but a single cache access does the work of two. Applied where it can across the hierarchy, the walk gets shorter and TLB-heavy workloads see around 15% more performance.",
                     '',
@@ -163,9 +176,11 @@ const fs = {
                     link(PAPERS.sdm, 'Branch Predicting with Sparse Distributed Memories'),
                     'arXiv:2110.09166, 2021',
                     '',
-                    sdmDiagram(),
+                    art(sdmDiagram()),
                     '',
-                    '     X query    o activated',
+                    art(
+                        '         X query    o activated',
+                    ),
                     ' - inactive     ring = radius',
                     '',
                     'Reframes branch prediction as recall from a sparse distributed memory. Each branch context maps to a point in a high-dimensional space, and a prediction is the aggregate of every stored outcome within a fixed radius of the query. Similar contexts naturally overlap their activation neighborhoods, so generalization comes from geometry instead of hand-tuned hash tables.',
@@ -175,13 +190,17 @@ const fs = {
                     link(PAPERS.ede, 'Execution Dependence Extension (EDE): ISA Support for Eliminating Fences'),
                     'ISCA 2021',
                     '',
-                    '   fence   ld A   st B  ║  ld C   st D',
-                    '                        ║',
-                    '   a fence orders every pair across it',
+                    art(
+                        '       fence   ld A   st B  ║  ld C   st D',
+                        '                            ║',
+                        '       a fence orders every pair across it',
+                    ),
                     '',
-                    '   EDE     ld A   st B     ld C   st D',
-                    '                     └────────┘',
-                    '   EDE orders one pair; rest flows on',
+                    art(
+                        '       EDE     ld A   st B     ld C   st D',
+                        '                         └────────┘',
+                        '       EDE orders one pair; rest flows on',
+                    ),
                     '',
                     'Memory fences are blunt instruments: they block reordering across them for every operation in flight. EDE adds ISA-level primitives that express ordering only between the specific operations that need it, so the pipeline keeps moving past everything else.',
                     '',
@@ -190,11 +209,13 @@ const fs = {
                     link(PAPERS.brb, 'BRB: Mitigating Branch Predictor Side-Channels'),
                     'HPCA 2019',
                     '',
-                    '   ┌───────────┐',
-                    '   │           │ ── save ──→  ┌─────┐',
-                    '   │ predictor │              │ BRB │',
-                    '   │           │ ←─ restore   └─────┘',
-                    '   └───────────┘',
+                    art(
+                        '       ┌───────────┐',
+                        '       │           │ ── save ──→  ┌─────┐',
+                        '       │ predictor │              │ BRB │',
+                        '       │           │ ←─ restore   └─────┘',
+                        '       └───────────┘',
+                    ),
                     '',
                     "Branch predictor state is what keeps prediction accurate, but it also leaks across security boundaries (Spectre and friends). The defensive fix is to flush the predictor on every context switch, which works but means every process restarts cold and pays for it. BRB is a small per-process buffer that snapshots a minimal slice of predictor state on switch-out and restores it on switch-in. Each process keeps its own warm state, isolation holds, the cold-start tax goes away.",
                     '',
@@ -203,11 +224,13 @@ const fs = {
                     link(PAPERS.nucleus, 'Nucleus: Finding the Sharing Limit of Heterogeneous Cores'),
                     'ACM TECS 16, 2017  (best-paper nominee)',
                     '',
-                    '   ┌───────────┐',
-                    '   │           │ shared state ┌────────┐',
-                    '   │    BIG    ╞══════════════╡ LITTLE │',
-                    '   │           │              └────────┘',
-                    '   └───────────┘',
+                    art(
+                        '       ┌───────────┐',
+                        '       │           │ shared state ┌────────┐',
+                        '       │    BIG    ╞══════════════╡ LITTLE │',
+                        '       │           │              └────────┘',
+                        '       └───────────┘',
+                    ),
                     '',
                     'In a big.LITTLE-style design, how much state can the big and little cores share before the whole thing stops making sense as a design? Nucleus quantifies that limit, which directly determines how cheaply you can migrate work between cores.',
                     '',
